@@ -18,19 +18,23 @@ app.get("/", (req, res) => {
 const resend = new Resend(process.env.RESEND_API);
 app.post("/mailportfolio", async (req, res) => {
     try {
+        const name = req.body.data.name;
+        const email = req.body.data.email;
+        const message = req.body.data.message;
+
         await resend.emails.send({
-            from: `${req.body.data.name} <onboarding@resend.dev>`,
+            from: `${name} <onboarding@resend.dev>`,
             to: ["ujjwalj12222@gmail.com"],
             subject: "Contacted through Portfolio",
-            html: `<strong>Name: ${req.body.data.name} <br><br>
-            Email: ${req.body.data.email}<br><br>
-            Message: ${req.body.data.message}  </strong>`,
+            html: `<strong>Name: ${name} <br><br>
+            Email: ${email}<br><br>
+            Message: ${message}  </strong>`,
         });
 
-        console.log("Email sent");
+        console.log(`Incoming -'${email}' \nEmail sent.`);
 
         res.json({
-            "success": true,
+            success: true,
         });
     } catch (error) {
         res.send(error);
@@ -40,5 +44,5 @@ app.post("/mailportfolio", async (req, res) => {
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () =>
-    console.log(`server is running successfully on PORT: ${PORT}`)
+    console.log(`server is running successfully on PORT: ${PORT}`),
 );
