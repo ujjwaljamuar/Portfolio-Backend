@@ -27,10 +27,10 @@ app.post("/mailportfolio", async (req, res) => {
             Message: ${req.body.data.message}  </strong>`,
         });
 
-        // console.log(req.body.data.name);
+        console.log("Email sent");
 
         res.json({
-            status: "sent",
+            "success": true,
         });
     } catch (error) {
         res.send(error);
