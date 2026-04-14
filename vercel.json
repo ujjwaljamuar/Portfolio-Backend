@@ -1,14 +1,14 @@
 {
     "version": 2,
     "name": "mailer",
-    "builds": [{ "src": "server.js", "use": "@vercel/node" }],
+    "builds": [{ "src": "app.ts", "use": "@vercel/node" }],
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/server.js",
+            "dest": "/app.ts",
             "headers": {
                 "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST"
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
             }
         }
     ]
