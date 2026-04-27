@@ -2,3 +2,5 @@
 /dist
 
 .env
+*.pem
+PROJECT_CONTEXT.md

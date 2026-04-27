@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import {
-    getContactDataCSV,
-    saveContactInfo,
+  getContactDataCSV,
+  saveContactInfo,
 } from "../controllers/contactController.js";
 
 const router: Router = express.Router();
