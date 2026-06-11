@@ -1,16 +1,4 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import config from "./config.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-export const privateKey = fs.readFileSync(
-  path.join(__dirname, "../../private.pem"),
-  "utf8",
-);
-
-export const publicKey = fs.readFileSync(
-  path.join(__dirname, "../../public.pem"),
-  "utf8",
-);
+export const privateKey = config.jwtPrivateKey;
+export const publicKey = config.jwtPublicKey;

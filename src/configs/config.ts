@@ -18,6 +18,8 @@ const {
   FIREBASE_STORAGE_BUCKET,
   FIREBASE_MESSAGING_SENDER_ID,
   FIREBASE_APP_ID,
+  JWT_PRIVATE_KEY,
+  JWT_PUBLIC_KEY,
 } = process.env;
 
 const requiredEnvVars = [
@@ -30,6 +32,8 @@ const requiredEnvVars = [
   "FIREBASE_STORAGE_BUCKET",
   "FIREBASE_MESSAGING_SENDER_ID",
   "FIREBASE_APP_ID",
+  "JWT_PRIVATE_KEY",
+  "JWT_PUBLIC_KEY",
 ] as const;
 
 for (const envKey of requiredEnvVars) {
@@ -56,8 +60,13 @@ type AppConfig = {
   adminSetupKey: string;
   authCookieName: string;
   resendApiKey?: string;
+  jwtPrivateKey: string;
+  jwtPublicKey: string;
   firebaseConfig: FirebaseConfig;
 };
+
+const normalizeMultilineSecret = (value: string): string =>
+  value.replace(/\\r/g, "").replace(/\\n/g, "\n").replace(/\r/g, "");
 
 const config: AppConfig = {
   nodeEnv: NODE_ENV || "development",
@@ -68,6 +77,8 @@ const config: AppConfig = {
   adminSetupKey: ADMIN_SETUP_KEY!,
   authCookieName: "portfolio_admin_token",
   resendApiKey: RESEND_API,
+  jwtPrivateKey: normalizeMultilineSecret(JWT_PRIVATE_KEY!),
+  jwtPublicKey: normalizeMultilineSecret(JWT_PUBLIC_KEY!),
   firebaseConfig: {
     apiKey: FIREBASE_API_KEY!,
     authDomain: FIREBASE_AUTH_DOMAIN!,
