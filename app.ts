@@ -43,7 +43,7 @@ app.use(
   cors({
     origin: config.frontendUrl,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   }),
 );
 
