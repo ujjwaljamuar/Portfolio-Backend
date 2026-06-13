@@ -20,6 +20,9 @@ const {
   FIREBASE_APP_ID,
   JWT_PRIVATE_KEY,
   JWT_PUBLIC_KEY,
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET,
 } = process.env;
 
 const requiredEnvVars = [
@@ -34,6 +37,9 @@ const requiredEnvVars = [
   "FIREBASE_APP_ID",
   "JWT_PRIVATE_KEY",
   "JWT_PUBLIC_KEY",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
 ] as const;
 
 for (const envKey of requiredEnvVars) {
@@ -51,6 +57,12 @@ type FirebaseConfig = {
   appId: string;
 };
 
+type CloudinaryConfig = {
+  cloudName: string;
+  apiKey: string;
+  apiSecret: string;
+};
+
 type AppConfig = {
   nodeEnv: string;
   isProduction: boolean;
@@ -63,6 +75,7 @@ type AppConfig = {
   jwtPrivateKey: string;
   jwtPublicKey: string;
   firebaseConfig: FirebaseConfig;
+  cloudinaryConfig: CloudinaryConfig;
 };
 
 const normalizeMultilineSecret = (value: string): string =>
@@ -86,6 +99,11 @@ const config: AppConfig = {
     storageBucket: FIREBASE_STORAGE_BUCKET!,
     messagingSenderId: FIREBASE_MESSAGING_SENDER_ID!,
     appId: FIREBASE_APP_ID!,
+  },
+  cloudinaryConfig: {
+    cloudName: CLOUDINARY_CLOUD_NAME!,
+    apiKey: CLOUDINARY_API_KEY!,
+    apiSecret: CLOUDINARY_API_SECRET!,
   },
 };
 
