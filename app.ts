@@ -9,6 +9,7 @@ import connectDB from "./src/configs/db.js";
 import contactRoutes from "./src/routes/contactRoutes.js";
 import blogRoutes from "./src/routes/blogRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
+import dsaRoutes from "./src/routes/dsaRoutes.js";
 
 connectDB().catch((error) => {
   console.error("MongoDB connection failed:", error);
@@ -57,6 +58,7 @@ app.use("/contacts", contactRoutes);
 app.use("/auth", authRoutes);
 
 app.use("/blogs", blogRoutes);
+app.use("/api/admin/dsa", dsaRoutes);
 
 app.use(ErrorMiddleware);
 
