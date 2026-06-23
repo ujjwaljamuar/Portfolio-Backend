@@ -41,7 +41,7 @@ const DsaProblemSchema = new Schema<DsaProblemDocument>(
 
     status: {
       type: String,
-      enum: ["todo", "solved", "revision"],
+      enum: ["Todo", "Solved", "Revision"],
       required: true,
       index: true,
     },
@@ -50,11 +50,10 @@ const DsaProblemSchema = new Schema<DsaProblemDocument>(
 
     approaches: {
       type: [DsaApproachSchema],
-      required: true,
-      validate: {
-        validator: (approaches: unknown[]) => approaches.length > 0,
-        message: "At least one approach is required",
-      },
+      // validate: {
+      //   validator: (approaches: unknown[]) => approaches.length > 0,
+      //   message: "At least one approach is required",
+      // },
     },
 
     notes: String,
