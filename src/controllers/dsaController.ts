@@ -5,8 +5,10 @@ import DsaProblemModel from "../models/dsaModel.js";
 import { DsaDifficulty, DsaStatus } from "../types/dsa.types.js";
 import { buildJsonResponse } from "../utils/response.js";
 
-const allowedStatuses: DsaStatus[] = ["Todo", "Solved", "Revision"];
+const allowedStatuses: DsaStatus[] = ["Todo", "Solved"];
 const allowedDifficulties: DsaDifficulty[] = ["Easy", "Medium", "Hard"];
+const revisionStatuses = ["Revision", "revision"];
+const dsaProblemSummaryProjection = "-question -approaches -notes";
 
 type ControllerError = Error & {
   name?: string;
@@ -55,9 +57,47 @@ const sendNotFoundResponse = (res: Response) => {
   );
 };
 
+const normalizeStatus = (status: unknown): DsaStatus | undefined => {
+  if (status === "todo" || status === "Todo") {
+    return "Todo";
+  }
+
+  if (status === "solved" || status === "Solved") {
+    return "Solved";
+  }
+
+  return undefined;
+};
+
+const isRevisionStatus = (status: unknown): boolean => {
+  return typeof status === "string" && revisionStatuses.includes(status);
+};
+
+const getSolvedFilter = () => ({
+  $or: [{ status: "Solved" }, { status: "Revision" }],
+});
+
+const getRevisionFilter = () => ({
+  $or: [{ needsRevision: true }, { status: "Revision" }],
+});
+
 export const createDsaProblem = async (req: Request, res: Response) => {
   try {
-    const problem = await DsaProblemModel.create(req.body);
+    const createData = { ...req.body };
+
+    if (isRevisionStatus(createData.status)) {
+      createData.status = "Solved";
+      createData.needsRevision = true;
+      createData.lastRevisedAt = new Date();
+    } else {
+      const normalizedStatus = normalizeStatus(createData.status);
+
+      if (normalizedStatus) {
+        createData.status = normalizedStatus;
+      }
+    }
+
+    const problem = await DsaProblemModel.create(createData);
 
     return res.status(201).json(
       buildJsonResponse({
@@ -88,23 +128,48 @@ export const getDsaProblems = async (req: Request, res: Response) => {
   }
 
   if (typeof status === "string") {
-    if (!allowedStatuses.includes(status as DsaStatus)) {
+    if (isRevisionStatus(status)) {
+      filters.$or = [{ needsRevision: true }, { status: "Revision" }];
+    } else {
+      const normalizedStatus = normalizeStatus(status);
+
+      if (!normalizedStatus || !allowedStatuses.includes(normalizedStatus)) {
+        return res.status(400).json(
+          buildJsonResponse({
+            success: false,
+            message: "Invalid status filter",
+          }),
+        );
+      }
+
+      filters.status = normalizedStatus;
+    }
+  }
+
+  if (typeof req.query.needsRevision === "string") {
+    if (!["true", "false"].includes(req.query.needsRevision)) {
       return res.status(400).json(
         buildJsonResponse({
           success: false,
-          message: "Invalid status filter",
+          message: "Invalid needsRevision filter",
         }),
       );
     }
 
-    filters.status = status;
+    if (req.query.needsRevision === "true") {
+      filters.$or = [{ needsRevision: true }, { status: "Revision" }];
+    } else {
+      filters.needsRevision = false;
+    }
   }
 
   if (typeof tag === "string" && tag.trim()) {
     filters.tags = tag.trim();
   }
 
-  const problems = await DsaProblemModel.find(filters).sort({ createdAt: -1 });
+  const problems = await DsaProblemModel.find(filters)
+    .select(dsaProblemSummaryProjection)
+    .sort({ createdAt: -1 });
 
   return res.json(
     buildJsonResponse({
@@ -129,7 +194,9 @@ export const searchDsaProblems = async (req: Request, res: Response) => {
   const problems = await DsaProblemModel.find(
     { $text: { $search: q.trim() } },
     { score: { $meta: "textScore" } },
-  ).sort({ score: { $meta: "textScore" } });
+  )
+    .select(dsaProblemSummaryProjection)
+    .sort({ score: { $meta: "textScore" } });
 
   return res.json(
     buildJsonResponse({
@@ -140,17 +207,38 @@ export const searchDsaProblems = async (req: Request, res: Response) => {
 };
 
 export const getDsaStats = async (_req: Request, res: Response) => {
-  const [total, todo, solved, revision, easy, medium, hard] = await Promise.all(
-    [
-      DsaProblemModel.countDocuments(),
-      DsaProblemModel.countDocuments({ status: "todo" }),
-      DsaProblemModel.countDocuments({ status: "solved" }),
-      DsaProblemModel.countDocuments({ status: "revision" }),
-      DsaProblemModel.countDocuments({ difficulty: "Easy" }),
-      DsaProblemModel.countDocuments({ difficulty: "Medium" }),
-      DsaProblemModel.countDocuments({ difficulty: "Hard" }),
-    ],
-  );
+  const [
+    total,
+    todo,
+    solved,
+    revision,
+    easyTotal,
+    easySolved,
+    mediumTotal,
+    mediumSolved,
+    hardTotal,
+    hardSolved,
+  ] = await Promise.all([
+    DsaProblemModel.countDocuments(),
+    DsaProblemModel.countDocuments({ status: "Todo" }),
+    DsaProblemModel.countDocuments(getSolvedFilter()),
+    DsaProblemModel.countDocuments(getRevisionFilter()),
+    DsaProblemModel.countDocuments({ difficulty: "Easy" }),
+    DsaProblemModel.countDocuments({
+      difficulty: "Easy",
+      ...getSolvedFilter(),
+    }),
+    DsaProblemModel.countDocuments({ difficulty: "Medium" }),
+    DsaProblemModel.countDocuments({
+      difficulty: "Medium",
+      ...getSolvedFilter(),
+    }),
+    DsaProblemModel.countDocuments({ difficulty: "Hard" }),
+    DsaProblemModel.countDocuments({
+      difficulty: "Hard",
+      ...getSolvedFilter(),
+    }),
+  ]);
 
   return res.json(
     buildJsonResponse({
@@ -159,10 +247,25 @@ export const getDsaStats = async (_req: Request, res: Response) => {
         total,
         todo,
         solved,
+        solvedOutOfTotal: {
+          solved,
+          total,
+        },
         revision,
-        easy,
-        medium,
-        hard,
+        byDifficulty: {
+          easy: {
+            total: easyTotal,
+            solved: easySolved,
+          },
+          medium: {
+            total: mediumTotal,
+            solved: mediumSolved,
+          },
+          hard: {
+            total: hardTotal,
+            solved: hardSolved,
+          },
+        },
       },
     }),
   );
@@ -195,7 +298,19 @@ export const updateDsaProblem = async (req: Request, res: Response) => {
   try {
     const updateData = { ...req.body };
 
-    if (updateData.status === "revision") {
+    if (isRevisionStatus(updateData.status)) {
+      updateData.status = "Solved";
+      updateData.needsRevision = true;
+      updateData.lastRevisedAt = new Date();
+    } else {
+      const normalizedStatus = normalizeStatus(updateData.status);
+
+      if (normalizedStatus) {
+        updateData.status = normalizedStatus;
+      }
+    }
+
+    if (updateData.needsRevision === true) {
       updateData.lastRevisedAt = new Date();
     }
 
@@ -248,7 +363,32 @@ export const updateDsaStatus = async (req: Request, res: Response) => {
 
   const { status } = req.body ?? {};
 
-  if (!allowedStatuses.includes(status)) {
+  if (isRevisionStatus(status)) {
+    const problem = await DsaProblemModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: "Solved",
+        needsRevision: true,
+        lastRevisedAt: new Date(),
+      },
+      { new: true, runValidators: true },
+    );
+
+    if (!problem) {
+      return sendNotFoundResponse(res);
+    }
+
+    return res.json(
+      buildJsonResponse({
+        message: "DSA problem marked for revision successfully",
+        data: problem,
+      }),
+    );
+  }
+
+  const normalizedStatus = normalizeStatus(status);
+
+  if (!normalizedStatus || !allowedStatuses.includes(normalizedStatus)) {
     return res.status(400).json(
       buildJsonResponse({
         success: false,
@@ -257,15 +397,12 @@ export const updateDsaStatus = async (req: Request, res: Response) => {
     );
   }
 
-  const updateData: { status: DsaStatus; lastRevisedAt?: Date } = { status };
-
-  if (status === "revision") {
-    updateData.lastRevisedAt = new Date();
-  }
-
   const problem = await DsaProblemModel.findByIdAndUpdate(
     req.params.id,
-    updateData,
+    {
+      status: normalizedStatus,
+      ...(normalizedStatus === "Todo" ? { needsRevision: false } : {}),
+    },
     { new: true, runValidators: true },
   );
 
@@ -289,6 +426,8 @@ export const reviseDsaProblem = async (req: Request, res: Response) => {
   const problem = await DsaProblemModel.findByIdAndUpdate(
     req.params.id,
     {
+      status: "Solved",
+      needsRevision: true,
       $inc: { revisionCount: 1 },
       lastRevisedAt: new Date(),
     },

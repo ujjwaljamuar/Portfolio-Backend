@@ -41,8 +41,14 @@ const DsaProblemSchema = new Schema<DsaProblemDocument>(
 
     status: {
       type: String,
-      enum: ["Todo", "Solved", "Revision"],
+      enum: ["Todo", "Solved"],
       required: true,
+      index: true,
+    },
+
+    needsRevision: {
+      type: Boolean,
+      default: false,
       index: true,
     },
 
