@@ -5,7 +5,7 @@ import DsaProblemModel from "../models/dsaModel.js";
 import { DsaDifficulty, DsaStatus } from "../types/dsa.types.js";
 import { buildJsonResponse } from "../utils/response.js";
 
-const allowedStatuses: DsaStatus[] = ["todo", "solved", "revision"];
+const allowedStatuses: DsaStatus[] = ["Todo", "Solved", "Revision"];
 const allowedDifficulties: DsaDifficulty[] = ["Easy", "Medium", "Hard"];
 
 type ControllerError = Error & {

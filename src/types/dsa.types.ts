@@ -6,7 +6,7 @@ export type DsaPlatform =
   | "Codeforces"
   | "Custom";
 export type DsaDifficulty = "Easy" | "Medium" | "Hard";
-export type DsaStatus = "todo" | "solved" | "revision";
+export type DsaStatus = "Todo" | "Solved" | "Revision";
 
 export interface DsaApproach {
   order: number;
