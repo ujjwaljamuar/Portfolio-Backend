@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import BlogModel from "../models/blogModel.js";
 import { buildJsonResponse } from "../utils/response.js";
 
+const blogSummaryAdminProjection = "-content -coverImage";
+const blogSummaryProjection = "-content";
+
 // Create Blog
 export const createBlog = async (req: Request, res: Response) => {
   try {
@@ -24,7 +27,7 @@ export const createBlog = async (req: Request, res: Response) => {
 
 // Public: Get published blogs
 export const getBlogs = async (_req: Request, res: Response) => {
-  const blogs = await BlogModel.find({ status: "published" }).sort({
+  const blogs = await BlogModel.find({ status: "published" }).select(blogSummaryProjection).sort({
     createdAt: -1,
   });
 
@@ -62,7 +65,7 @@ export const getBlogBySlug = async (req: Request, res: Response) => {
 
 // Admin: Get all blogs
 export const getAllBlogsAdmin = async (_req: Request, res: Response) => {
-  const blogs = await BlogModel.find().sort({ createdAt: -1 });
+  const blogs = await BlogModel.find().select(blogSummaryAdminProjection).sort({ createdAt: -1 });
   return res.json(
     buildJsonResponse({
       message: "All blogs fetched successfully",
