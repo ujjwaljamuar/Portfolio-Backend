@@ -27,9 +27,11 @@ export const createBlog = async (req: Request, res: Response) => {
 
 // Public: Get published blogs
 export const getBlogs = async (_req: Request, res: Response) => {
-  const blogs = await BlogModel.find({ status: "published" }).select(blogSummaryProjection).sort({
-    createdAt: -1,
-  });
+  const blogs = await BlogModel.find({ status: "published" })
+    .select(blogSummaryProjection)
+    .sort({
+      createdAt: -1,
+    });
 
   return res.json(
     buildJsonResponse({
@@ -63,9 +65,34 @@ export const getBlogBySlug = async (req: Request, res: Response) => {
   );
 };
 
+// Admin: Get by slug
+export const getBlogBySlugAdmin = async (req: Request, res: Response) => {
+  const blog = await BlogModel.findOne({
+    slug: req.params.slug,
+  });
+
+  if (!blog) {
+    return res.status(404).json(
+      buildJsonResponse({
+        success: false,
+        message: "Blog not found",
+      }),
+    );
+  }
+
+  return res.json(
+    buildJsonResponse({
+      message: "Blog fetched successfully",
+      data: blog,
+    }),
+  );
+};
+
 // Admin: Get all blogs
 export const getAllBlogsAdmin = async (_req: Request, res: Response) => {
-  const blogs = await BlogModel.find().select(blogSummaryAdminProjection).sort({ createdAt: -1 });
+  const blogs = await BlogModel.find()
+    .select(blogSummaryAdminProjection)
+    .sort({ createdAt: -1 });
   return res.json(
     buildJsonResponse({
       message: "All blogs fetched successfully",
